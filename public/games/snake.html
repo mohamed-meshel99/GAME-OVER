@@ -15,7 +15,6 @@
             min-height: 100vh;
             margin: 0;
             color: #00FF00;
-            position: relative;
         }
 
         canvas {
@@ -28,7 +27,7 @@
         }
 
         h1 {
-            font-size: 36px;
+            font-size: 40px;
             color: #39FF14;
             text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14;
         }
@@ -41,7 +40,7 @@
 
         #start-btn {
             padding: 15px 30px;
-            font-size: 20px;
+            font-size: 30px;
             background-color: #39FF14;
             color: #000;
             border: none;
@@ -56,16 +55,11 @@
         #control-method {
             background-color: #000;
             color: #00FF00;
-            font-size: 30px;
-            padding: 5px 5px;
+            font-size: 40px;
+            padding: 5px 10px;
             border: 2px solid #39FF14;
             cursor: pointer;
             box-shadow: 0px 0px 10px #39FF14;
-        }
-
-        #control-method:hover {
-            background-color: #39FF14;
-            color: #000;
         }
     </style>
 </head>
@@ -77,7 +71,7 @@
         <label for="control-method">Choose control method:</label>
         <select id="control-method">
             <option value="keyboard">Keyboard</option>
-            <option value="touch">Touch</option>
+            <option value="touch">Touch Screen</option>
         </select>
     </div>
     <button id="start-btn">Start Game</button>
@@ -96,11 +90,7 @@
         let score = 0;
         let gameInterval;
         let controlMethod = 'keyboard';
-
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
+        let startX, startY;
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -126,6 +116,7 @@
                 y: snake[0].y + direction.y
             };
 
+            // Check for collision with walls
             if (head.x < 0 || head.x >= canvas.width / 20 || head.y < 0 || head.y >= canvas.height / 20 || collisionWithSelf(head)) {
                 clearInterval(gameInterval);
                 alert('Game Over! Restarting game...');
@@ -160,43 +151,50 @@
         function changeDirection(event) {
             if (controlMethod === 'keyboard') {
                 switch (event.key) {
-                    case 'ArrowUp':
-                        if (direction.y === 0) direction = { x: 0, y: -1 };
-                        break;
-                    case 'ArrowDown':
-                        if (direction.y === 0) direction = { x: 0, y: 1 };
-                        break;
-                    case 'ArrowLeft':
-                        if (direction.x === 0) direction = { x: -1, y: 0 };
-                        break;
-                    case 'ArrowRight':
-                        if (direction.x === 0) direction = { x: 1, y: 0 };
-                        break;
+                    case 'ArrowUp': if (direction.y === 0) direction = { x: 0, y: -1 }; break;
+                    case 'ArrowDown': if (direction.y === 0) direction = { x: 0, y: 1 }; break;
+                    case 'ArrowLeft': if (direction.x === 0) direction = { x: -1, y: 0 }; break;
+                    case 'ArrowRight': if (direction.x === 0) direction = { x: 1, y: 0 }; break;
                 }
             }
         }
 
         function handleTouchStart(event) {
-            touchStartX = event.touches[0].clientX;
-            touchStartY = event.touches[0].clientY;
+            event.preventDefault();
+            const touch = event.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
         }
 
-        function handleTouchEnd(event) {
-            touchEndX = event.changedTouches[0].clientX;
-            touchEndY = event.changedTouches[0].clientY;
+        function handleTouchMove(event) {
+            event.preventDefault();
+            const touch = event.touches[0];
+            const deltaX = touch.clientX - startX;
+            const deltaY = touch.clientY - startY;
 
-            const dx = touchEndX - touchStartX;
-            const dy = touchEndY - touchStartY;
-
-            if (Math.abs(dx) > Math.abs(dy)) {
-                // Horizontal swipe
-                if (dx > 0 && direction.x === 0) direction = { x: 1, y: 0 };
-                if (dx < 0 && direction.x === 0) direction = { x: -1, y: 0 };
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (deltaX > 0 && direction.x === 0) {
+                    direction = { x: 1, y: 0 };
+                } else if (deltaX < 0 && direction.x === 0) {
+                    direction = { x: -1, y: 0 };
+                }
             } else {
-                // Vertical swipe
-                if (dy > 0 && direction.y === 0) direction = { x: 0, y: 1 };
-                if (dy < 0 && direction.y === 0) direction = { x: 0, y: -1 };
+                if (deltaY > 0 && direction.y === 0) {
+                    direction = { x: 0, y: 1 };
+                } else if (deltaY < 0 && direction.y === 0) {
+                    direction = { x: 0, y: -1 };
+                }
             }
+        }
+
+        function enableTouchControls() {
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        }
+
+        function disableTouchControls() {
+            canvas.removeEventListener('touchstart', handleTouchStart);
+            canvas.removeEventListener('touchmove', handleTouchMove);
         }
 
         function resetGame() {
@@ -207,13 +205,10 @@
             generateFood();
             draw();
 
-            startButton.style.display = 'none';
-            canvas.style.display = 'block';
-
             if (controlMethod === 'touch') {
-                canvas.addEventListener('touchstart', handleTouchStart);
-                canvas.addEventListener('touchend', handleTouchEnd);
+                enableTouchControls();
             } else {
+                disableTouchControls();
                 document.addEventListener('keydown', changeDirection);
             }
 
@@ -223,7 +218,11 @@
         startButton.addEventListener('click', () => {
             controlMethod = controlMethodSelect.value;
             resetGame();
+            canvas.style.display = 'block';
+            startButton.style.display = 'none';
         });
+
+        controlMethodSelect.addEventListener('change', resetGame);
     </script>
 </body>
 
