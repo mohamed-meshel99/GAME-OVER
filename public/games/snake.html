@@ -27,7 +27,7 @@
         }
 
         h1 {
-            font-size: 40px;
+            font-size: 36px;
             color: #39FF14;
             text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14;
         }
@@ -40,7 +40,7 @@
 
         #start-btn {
             padding: 15px 30px;
-            font-size: 30px;
+            font-size: 20px;
             background-color: #39FF14;
             color: #000;
             border: none;
@@ -55,7 +55,7 @@
         #control-method {
             background-color: #000;
             color: #00FF00;
-            font-size: 40px;
+            font-size: 20px;
             padding: 5px 10px;
             border: 2px solid #39FF14;
             cursor: pointer;
@@ -212,7 +212,7 @@
                 document.addEventListener('keydown', changeDirection);
             }
 
-            gameInterval = setInterval(update, 100);
+            gameInterval = setInterval(update, 200);
         }
 
         startButton.addEventListener('click', () => {
