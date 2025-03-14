@@ -39,30 +39,6 @@
             color: #39FF14;
         }
 
-        .controls {
-            display: flex;
-            gap: 20px;
-            position: fixed;
-            bottom: 20px;
-        }
-
-        .control-btn {
-            padding: 20px;
-      font-size: 20px;
-      margin: 5px;
-      background-color: #00FF00;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-
-        }
-
-        .control-btn:hover {
-            background-color: #39FF14;
-            color: #000;
-        }
-
         #start-btn {
             padding: 15px 30px;
             font-size: 20px;
@@ -77,36 +53,20 @@
             background-color: #00FF00;
         }
 
-        @media (max-width: 600px) {
-            canvas {
-                width: 80%;
-                height: auto;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            #score {
-                font-size: 18px;
-            }
-
-        }
         #control-method {
-    background-color: #000;
-    color: #00FF00;
-    font-size: 30px;
-    padding: 5px 5px;
-    border: 2px solid #39FF14;
-    cursor: pointer;
-    box-shadow: 0px 0px 10px #39FF14;
-}
+            background-color: #000;
+            color: #00FF00;
+            font-size: 30px;
+            padding: 5px 5px;
+            border: 2px solid #39FF14;
+            cursor: pointer;
+            box-shadow: 0px 0px 10px #39FF14;
+        }
 
-#control-method:hover {
-    background-color: #39FF14;
-    color: #000;
-}
-
+        #control-method:hover {
+            background-color: #39FF14;
+            color: #000;
+        }
     </style>
 </head>
 
@@ -117,25 +77,17 @@
         <label for="control-method">Choose control method:</label>
         <select id="control-method">
             <option value="keyboard">Keyboard</option>
-            <option value="mouse">Mouse</option>
+            <option value="touch">Touch</option>
         </select>
     </div>
     <button id="start-btn">Start Game</button>
     <canvas id="game-canvas" width="600" height="500"></canvas>
-
-    <div class="controls" id="mouse-controls" style="display: none;">
-        <button class="control-btn" id="up-btn">↑</button>
-        <button class="control-btn" id="down-btn">↓</button>
-        <button class="control-btn" id="left-btn">←</button>
-        <button class="control-btn" id="right-btn">→</button>
-    </div>
 
     <script>
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('score');
         const controlMethodSelect = document.getElementById('control-method');
-        const mouseControls = document.getElementById('mouse-controls');
         const startButton = document.getElementById('start-btn');
 
         let snake = [{ x: 10, y: 10 }];
@@ -144,6 +96,11 @@
         let score = 0;
         let gameInterval;
         let controlMethod = 'keyboard';
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -169,7 +126,6 @@
                 y: snake[0].y + direction.y
             };
 
-            // Check for collision with walls
             if (head.x < 0 || head.x >= canvas.width / 20 || head.y < 0 || head.y >= canvas.height / 20 || collisionWithSelf(head)) {
                 clearInterval(gameInterval);
                 alert('Game Over! Restarting game...');
@@ -179,7 +135,7 @@
 
             snake.unshift(head);
             if (head.x === food.x && head.y === food.y) {
-                score += 10; // Increase score by 10
+                score += 10;
                 scoreDisplay.textContent = `Score: ${score}`;
                 generateFood();
             } else {
@@ -205,53 +161,41 @@
             if (controlMethod === 'keyboard') {
                 switch (event.key) {
                     case 'ArrowUp':
-                        if (direction.y === 0) {
-                            direction = { x: 0, y: -1 };
-                        }
+                        if (direction.y === 0) direction = { x: 0, y: -1 };
                         break;
                     case 'ArrowDown':
-                        if (direction.y === 0) {
-                            direction = { x: 0, y: 1 };
-                        }
+                        if (direction.y === 0) direction = { x: 0, y: 1 };
                         break;
                     case 'ArrowLeft':
-                        if (direction.x === 0) {
-                            direction = { x: -1, y: 0 };
-                        }
+                        if (direction.x === 0) direction = { x: -1, y: 0 };
                         break;
                     case 'ArrowRight':
-                        if (direction.x === 0) {
-                            direction = { x: 1, y: 0 };
-                        }
+                        if (direction.x === 0) direction = { x: 1, y: 0 };
                         break;
                 }
             }
         }
 
-        function handleMouseControl(directionBtn) {
-            if (controlMethod === 'mouse') {
-                switch (directionBtn) {
-                    case 'up':
-                        if (direction.y === 0) {
-                            direction = { x: 0, y: -1 };
-                        }
-                        break;
-                    case 'down':
-                        if (direction.y === 0) {
-                            direction = { x: 0, y: 1 };
-                        }
-                        break;
-                    case 'left':
-                        if (direction.x === 0) {
-                            direction = { x: -1, y: 0 };
-                        }
-                        break;
-                    case 'right':
-                        if (direction.x === 0) {
-                            direction = { x: 1, y: 0 };
-                        }
-                        break;
-                }
+        function handleTouchStart(event) {
+            touchStartX = event.touches[0].clientX;
+            touchStartY = event.touches[0].clientY;
+        }
+
+        function handleTouchEnd(event) {
+            touchEndX = event.changedTouches[0].clientX;
+            touchEndY = event.changedTouches[0].clientY;
+
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Horizontal swipe
+                if (dx > 0 && direction.x === 0) direction = { x: 1, y: 0 };
+                if (dx < 0 && direction.x === 0) direction = { x: -1, y: 0 };
+            } else {
+                // Vertical swipe
+                if (dy > 0 && direction.y === 0) direction = { x: 0, y: 1 };
+                if (dy < 0 && direction.y === 0) direction = { x: 0, y: -1 };
             }
         }
 
@@ -263,48 +207,23 @@
             generateFood();
             draw();
 
-            // Hide start button and show canvas
             startButton.style.display = 'none';
             canvas.style.display = 'block';
 
-            if (controlMethod === 'mouse') {
-                mouseControls.style.display = 'flex';
-                document.removeEventListener('keydown', changeDirection);
+            if (controlMethod === 'touch') {
+                canvas.addEventListener('touchstart', handleTouchStart);
+                canvas.addEventListener('touchend', handleTouchEnd);
             } else {
-                mouseControls.style.display = 'none';
                 document.addEventListener('keydown', changeDirection);
             }
 
             gameInterval = setInterval(update, 100);
         }
 
-        function startGame() {
-            startButton.style.display = 'none';  // Hide start button
-            canvas.style.display = 'block';  // Show canvas
+        startButton.addEventListener('click', () => {
             controlMethod = controlMethodSelect.value;
-
-            if (controlMethod === 'mouse') {
-                mouseControls.style.display = 'flex';
-                document.removeEventListener('keydown', changeDirection);
-            } else {
-                mouseControls.style.display = 'none';
-                document.addEventListener('keydown', changeDirection);
-            }
-
             resetGame();
-        }
-
-        startButton.addEventListener('click', startGame);
-        controlMethodSelect.addEventListener('change', () => {
-            if (canvas.style.display === 'block') {
-                resetGame();
-            }
         });
-
-        document.getElementById('up-btn').addEventListener('click', () => handleMouseControl('up'));
-        document.getElementById('down-btn').addEventListener('click', () => handleMouseControl('down'));
-        document.getElementById('left-btn').addEventListener('click', () => handleMouseControl('left'));
-        document.getElementById('right-btn').addEventListener('click', () => handleMouseControl('right'));
     </script>
 </body>
 
