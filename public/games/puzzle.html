@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2048 Game</title>
+  <style>body {
+    font-family: "Arial", sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #1a1a1a;
+  }
+  
+  .game-container {
+    width: 90vw;
+    max-width: 400px;
+    text-align: center;
+  }
+  
+  .grid-container {
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    width: 85vw;
+    max-width: 350px;
+    aspect-ratio: 1 / 1;
+  }
+  
+  .grid-cell {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid #00ffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 4vw;
+    font-weight: bold;
+    color: #fff;
+  }
+  
+  .control-buttons {
+    display: none;
+    margin-top: 10px;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .control-buttons button {
+    padding: 10px;
+    font-size: 16px;
+    margin: 3px;
+    background-color: #00FF00;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .control-buttons button:hover {
+    background-color: #00CC00;
+  }
+  
+  .choice-container {
+    background-color: #000;
+    color: #00FF00;
+    font-size: 20px;
+    padding: 10px 15px;
+    border: 2px solid #39FF14;
+    cursor: pointer;
+    box-shadow: 0px 0px 5px #39FF14;
+    margin-bottom: 10px;
+  }
+  
+  /* تحسين المظهر للأجهزة الصغيرة */
+  @media (max-width: 600px) {
+    .grid-container {
+      width: 90vw;
+      max-width: 300px;
+      gap: 4px;
+    }
+  
+    .grid-cell {
+      font-size: 5vw;
+    }
+  
+    .control-buttons button {
+      font-size: 14px;
+      padding: 8px;
+    }
+  }
+   </style>
+</head>
+<body>
+  <div>
+    <h2>Choose Control Method</h2>
+    <button class="choice-container" onclick="setControl('keyboard')">Keyboard</button>
+    <button class="choice-container"  onclick="setControl('mouse')">Mouse</button>
+  </div>
+
+  <div class="game-container" style="display: none;">
+    <h1>2048</h1>
+    <div class="score-container">Score: <span>0</span></div>
+    <div class="grid-container"></div>
+    <div class="control-buttons">
+      <button onclick="handleInput('ArrowUp')">⬆</button>
+      <div>
+        <button onclick="handleInput('ArrowLeft')">⬅</button>
+        <button onclick="handleInput('ArrowRight')">➡</button>
+      </div>
+      <button onclick="handleInput('ArrowDown')">⬇</button>
+    </div>
+  </div>
+
+  <script>
+    let controlMethod = 'keyboard';
+    const choiceContainer = document.querySelector(".choice-container");
+    const gameContainer = document.querySelector(".game-container");
+    const controlButtons = document.querySelector(".control-buttons");
+    const gridContainer = document.querySelector(".grid-container");
+    const scoreContainer = document.querySelector(".score-container span");
+
+    let grid = [];
+    let score = 0;
+    const GRID_SIZE = 4;
+
+    function setControl(method) {
+      controlMethod = method;
+      choiceContainer.style.display = "none";
+      gameContainer.style.display = "block";
+      if (controlMethod === 'mouse') {
+        controlButtons.style.display = "flex";
+        controlButtons.style.flexDirection = "column";
+        controlButtons.style.alignItems = "center";
+      } else {
+        document.addEventListener("keydown", (event) => handleInput(event.key));
+      }
+      setup();
+    }
+
+    function handleInput(direction) {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(direction)) {
+        move(direction);
+        addRandomTile();
+        updateUI();
+      }
+    }
+
+    function setup() {
+      createGrid();
+      addRandomTile();
+      addRandomTile();
+      updateUI();
+    }
+
+    function createGrid() {
+      grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(null));
+    }
+
+    function addRandomTile() {
+      let emptyCells = [];
+      for (let row = 0; row < GRID_SIZE; row++) {
+        for (let col = 0; col < GRID_SIZE; col++) {
+          if (grid[row][col] === null) {
+            emptyCells.push({ row, col });
+          }
+        }
+      }
+      if (emptyCells.length > 0) {
+        let { row, col } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        grid[row][col] = Math.random() > 0.1 ? 2 : 4;
+      }
+    }
+
+    function move(direction) {
+      let moved = false;
+      let merged = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false));
+      
+      function slide(row, col, newRow, newCol) {
+        if (grid[newRow][newCol] === null) {
+          grid[newRow][newCol] = grid[row][col];
+          grid[row][col] = null;
+          moved = true;
+        } else if (grid[newRow][newCol] === grid[row][col] && !merged[newRow][newCol]) {
+          grid[newRow][newCol] *= 2;
+          score += grid[newRow][newCol];
+          grid[row][col] = null;
+          merged[newRow][newCol] = true;
+          moved = true;
+        }
+      }
+
+      for (let i = 0; i < GRID_SIZE; i++) {
+        for (let j = 0; j < GRID_SIZE; j++) {
+          if (grid[i][j] !== null) {
+            if (direction === 'ArrowUp' && i > 0) slide(i, j, i - 1, j);
+            if (direction === 'ArrowDown' && i < GRID_SIZE - 1) slide(i, j, i + 1, j);
+            if (direction === 'ArrowLeft' && j > 0) slide(i, j, i, j - 1);
+            if (direction === 'ArrowRight' && j < GRID_SIZE - 1) slide(i, j, i, j + 1);
+          }
+        }
+      }
+    }
+
+    function updateUI() {
+      gridContainer.innerHTML = "";
+      for (let row = 0; row < GRID_SIZE; row++) {
+        for (let col = 0; col < GRID_SIZE; col++) {
+          const cell = document.createElement("div");
+          cell.className = "grid-cell";
+          if (grid[row][col] !== null) {
+            cell.textContent = grid[row][col];
+          }
+          gridContainer.appendChild(cell);
+        }
+      }
+      scoreContainer.textContent = score;
+    }
+  </script>
+</body>
+</html>
